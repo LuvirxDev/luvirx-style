@@ -2,200 +2,358 @@ from flask import Flask, render_template_string, request, jsonify, url_for
 
 app = Flask(__name__)
 
-# --- CONFIGURACIÓN DE ALTO NIVEL ---
-WSP = "573115221592"
-PIN_ADMIN = "2102"
-pedidos_db = []
-diseños_db = []
-quejas_db = []
+# --- CONFIGURACIÓN ESTRATÉGICA LUVIRX STYLE ---
+WSP_OFFICIAL = "573115221592"
+ADMIN_PIN_ACCESS = "2102"
 
-HTML_PROFESIONAL = """
+# DATABASE VOLÁTIL DE ALTA DISPONIBILIDAD
+storage = {
+    "pedidos": [],
+    "disenos_personalizados": [],
+    "quejas_reclamos": [],
+    "analytics": {"vistas": 0, "interacciones_wsp": 0}
+}
+
+# ESTRUCTURA DE PRODUCTOS (ARREGLO MASIVO PARA ROBUSTEZ)
+CATALOGO_LUVIRX = {
+    "conjuntos": [
+        {"id": "C1", "nombre": "Conjunto Onyx Urban", "precio": 185000, "desc": "Seda y Algodón"},
+        {"id": "C2", "nombre": "Conjunto Marble White", "precio": 210000, "desc": "Edición Limitada"}
+    ],
+    "jeans": [
+        {"id": "J1", "nombre": "Jean Heritage Slim", "precio": 145000, "desc": "Denim Japonés"},
+        {"id": "J2", "nombre": "Jean Street Baggy", "precio": 130000, "desc": "Corte Oversize"}
+    ],
+    "camisas": [
+        {"id": "CM1", "nombre": "Camisa Oxford Luvirx", "precio": 95000, "desc": "100% Algodón Pima"},
+        {"id": "CM2", "nombre": "Camisa Versailles Print", "precio": 115000, "desc": "Estampado Digital"}
+    ],
+    "blusas": [
+        {"id": "B1", "nombre": "Blusa Silk Radiance", "precio": 85000, "desc": "Seda Natural"},
+        {"id": "B2", "nombre": "Blusa Velvet Night", "precio": 90000, "desc": "Terciopelo Premium"}
+    ],
+    "faldas": [
+        {"id": "F1", "nombre": "Falda Midi Plisada", "precio": 75000, "desc": "Efecto Satinado"},
+        {"id": "F2", "nombre": "Minifalda Leather Luxe", "precio": 95000, "desc": "Cuero Vegano"}
+    ],
+    "deportiva": [
+        {"id": "D1", "nombre": "Leggings Pro-Performance", "precio": 110000, "desc": "Tecnología Dry-Fit"},
+        {"id": "D2", "nombre": "Top Impact Studio", "precio": 65000, "desc": "Soporte Alta Intensidad"}
+    ]
+}
+
+HTML_TEMPLATE_ULTIMATE = """
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luvirx Style | Luxury Urban Studio</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>Luvirx Style | Luxury Design & 3D Fashion Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Poppins:wght@100;300;400;600;800&family=Montserrat:wght@200;700&display=swap" rel="stylesheet">
     <style>
-        :root { --oro: #d4af37; --negro: #000; --gris: #0a0a0a; --blanco: #fff; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        body { background: var(--negro); color: var(--blanco); scroll-behavior: smooth; overflow-x: hidden; }
-        
-        /* HEADER Y LOGO RESTAURADO */
-        nav { 
-            background: #000; padding: 1.5rem 8%; 
-            display: flex; justify-content: space-between; align-items: center; 
-            border-bottom: 1px solid var(--oro); position: sticky; top: 0; z-index: 1000; 
+        :root {
+            --gold: #d4af37;
+            --gold-bright: #ffdf00;
+            --black: #000000;
+            --deep-gray: #050505;
+            --soft-gray: #121212;
+            --white: #ffffff;
+            --error: #ff3333;
+            --success: #25d366;
+            --accent: #1a1a1a;
         }
-        .logo-box { display: flex; align-items: center; text-decoration: none; justify-content: center; width: 100%; }
-        .logo-img { height: 60px; width: auto; object-fit: contain; margin-right: 20px; border-radius: 8px; }
-        .logo-txt { font-family: 'Playfair Display'; color: var(--oro); font-size: 2.2rem; letter-spacing: 5px; text-transform: uppercase; }
 
-        /* BOTÓN WHATSAPP INTACTO */
-        .btn-wsp { position: fixed; bottom: 25px; right: 25px; background: #25d366; color: #fff; padding: 15px 25px; border-radius: 50px; text-decoration: none; font-weight: 600; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 10px; transition: 0.3s; }
-        .btn-wsp:hover { transform: scale(1.1); background: #128c7e; }
+        /* RESET PROFESIONAL */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; outline: none; }
+        body { background-color: var(--black); color: var(--white); overflow-x: hidden; scroll-behavior: smooth; }
 
-        /* MENÚ DE CATEGORÍAS */
-        .menu-cat { background: var(--gris); padding: 15px; text-align: center; border-bottom: 1px solid #111; overflow-x: auto; white-space: nowrap; position: sticky; top: 90px; z-index: 999; }
-        .cat-link { color: #666; text-decoration: none; margin: 0 15px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; }
-        .cat-link:hover { color: var(--oro); }
+        /* HEADER & LOGO ENGINE */
+        .top-nav {
+            background: rgba(0,0,0,0.95);
+            padding: 1.5rem 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--gold);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 10000;
+            backdrop-filter: blur(15px);
+        }
+        .nav-logo-area { display: flex; align-items: center; text-decoration: none; gap: 20px; }
+        .nav-logo-img { height: 90px; width: auto; object-fit: contain; transition: transform 0.5s ease; filter: drop-shadow(0 0 10px rgba(212,175,55,0.2)); }
+        .nav-logo-img:hover { transform: scale(1.1) rotate(-2deg); }
+        .nav-brand-text { font-family: 'Playfair Display'; font-size: 3rem; color: var(--gold); letter-spacing: 12px; text-transform: uppercase; font-weight: 900; }
 
-        /* HERO SECCIÓN */
-        .hero { height: 50vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=1600'); background-size: cover; background-position: center; border-bottom: 2px solid var(--oro); }
-        .hero h1 { font-family: 'Playfair Display'; font-size: 4rem; color: var(--oro); margin-bottom: 10px; }
+        /* WHATSAPP FLOAT BUTTON */
+        .wsp-anchor {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            background: var(--success);
+            color: #fff;
+            padding: 20px 35px;
+            border-radius: 60px;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 9999;
+            box-shadow: 0 15px 45px rgba(0,0,0,0.7);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .wsp-anchor:hover { transform: translateY(-10px) scale(1.05); box-shadow: 0 25px 60px rgba(37,211,102,0.4); }
+
+        /* MENU DE CATEGORIAS DINAMICO */
+        .category-scroller {
+            background: var(--soft-gray);
+            padding: 20px 0;
+            margin-top: 130px;
+            border-bottom: 1px solid var(--accent);
+            position: sticky;
+            top: 130px;
+            z-index: 9998;
+            overflow-x: auto;
+            white-space: nowrap;
+            text-align: center;
+        }
+        .category-scroller a {
+            color: #666;
+            text-decoration: none;
+            margin: 0 25px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-weight: 600;
+            transition: 0.3s ease;
+        }
+        .category-scroller a:hover { color: var(--gold); }
+        .category-scroller a.special { color: var(--gold); border: 1px solid var(--gold); padding: 5px 15px; border-radius: 5px; }
+
+        /* HERO SECTION */
+        .lux-hero {
+            height: 70vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('https://images.unsplash.com/photo-1539109132304-39277013f2f0?q=80&w=2000');
+            background-size: cover;
+            background-attachment: fixed;
+            border-bottom: 5px solid var(--gold);
+        }
+        .lux-hero h1 { font-family: 'Playfair Display'; font-size: 6rem; letter-spacing: 20px; color: var(--gold); margin-bottom: 20px; text-shadow: 0 10px 30px rgba(0,0,0,1); }
+        .lux-hero p { letter-spacing: 8px; font-weight: 200; color: #aaa; text-transform: uppercase; }
+
+        /* GRID SYSTEM & CARDS */
+        .main-container { padding: 80px 8%; }
+        .section-heading { font-family: 'Playfair Display'; font-size: 4rem; color: var(--gold); text-align: center; margin: 120px 0 80px; text-transform: uppercase; letter-spacing: 15px; }
+        .section-heading span { display: block; font-family: 'Poppins'; font-size: 1rem; color: #444; letter-spacing: 6px; margin-top: 15px; }
+
+        .fashion-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 60px; }
+        .fashion-card { background: var(--deep-gray); border-radius: 40px; border: 1px solid var(--accent); overflow: hidden; transition: 0.7s cubic-bezier(0.19, 1, 0.22, 1); position: relative; }
+        .fashion-card:hover { transform: translateY(-30px); border-color: var(--gold); box-shadow: 0 50px 100px rgba(0,0,0,0.8); }
+        .card-image-box { height: 550px; background: #010101; display: flex; align-items: center; justify-content: center; color: #080808; font-size: 5rem; font-weight: 900; letter-spacing: 30px; position: relative; }
+        .card-image-box::after { content: 'LUVIRX'; }
         
-        /* CONTENEDOR GENERAL */
-        .contenedor { padding: 60px 8%; }
-        .titulo-seccion { font-family: 'Playfair Display'; font-size: 2.5rem; color: var(--oro); text-align: center; margin: 80px 0 50px; text-transform: uppercase; letter-spacing: 3px; position: relative; }
-        .titulo-seccion::after { content: ''; display: block; width: 60px; height: 2px; background: var(--oro); margin: 15px auto 0; }
+        .card-body { padding: 45px; text-align: center; }
+        .card-body h3 { font-size: 1.8rem; letter-spacing: 3px; margin-bottom: 10px; font-weight: 300; color: var(--white); }
+        .card-body p { color: #555; margin-bottom: 25px; font-size: 0.9rem; }
+        .item-price { color: var(--gold); font-size: 2.5rem; font-weight: 800; display: block; margin-bottom: 35px; }
         
-        /* GRID DE PRODUCTOS (IMÁGENES VACÍAS) */
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 35px; }
-        .card { background: var(--gris); border-radius: 20px; overflow: hidden; border: 1px solid #111; transition: 0.4s; text-align: center; }
-        .card:hover { border-color: var(--oro); transform: translateY(-10px); }
-        .img-vacia { height: 380px; background: #050505; display: flex; align-items: center; justify-content: center; color: #1a1a1a; font-size: 2rem; font-weight: 700; letter-spacing: 10px; border-bottom: 1px solid #111; }
-        .info { padding: 25px; }
-        .precio { color: var(--oro); font-size: 1.6rem; font-weight: 700; margin: 15px 0; display: block; }
-        .btn-lujo { background: var(--oro); color: #000; border: none; padding: 15px; width: 100%; font-weight: 700; border-radius: 10px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; }
-        .btn-lujo:hover { background: #fff; transform: scale(1.02); }
+        .action-btn { background: transparent; border: 2px solid var(--gold); color: var(--gold); padding: 22px 45px; width: 100%; border-radius: 20px; cursor: pointer; text-transform: uppercase; font-weight: 800; letter-spacing: 5px; transition: 0.5s; font-size: 1.1rem; }
+        .action-btn:hover { background: var(--gold); color: #000; box-shadow: 0 0 40px var(--gold); letter-spacing: 8px; }
 
-        /* STUDIO: HAZ TU PROPIO DISEÑO */
-        .studio-box { background: #0a0a0a; padding: 80px 10%; border: 1px solid var(--oro); border-radius: 25px; margin: 60px 0; text-align: center; }
-        .studio-box textarea { width: 100%; padding: 20px; background: #000; border: 1px solid #222; color: #fff; border-radius: 12px; min-height: 150px; margin: 25px 0; }
+        /* 3D DESIGN STUDIO AREA */
+        .studio-3d-wrap { background: linear-gradient(145deg, #0a0a0a, #000); border: 1px solid var(--gold); border-radius: 60px; padding: 120px 10%; margin: 150px 0; position: relative; overflow: hidden; }
+        .studio-3d-wrap::before { content: '3D'; position: absolute; right: -50px; top: -50px; font-size: 30rem; font-weight: 900; color: rgba(212,175,55,0.02); pointer-events: none; }
+        .studio-3d-wrap h2 { font-family: 'Playfair Display'; font-size: 5rem; color: var(--gold); margin-bottom: 30px; text-transform: uppercase; }
+        .studio-textarea { width: 100%; padding: 40px; background: #000; border: 2px solid #222; color: #fff; border-radius: 35px; min-height: 350px; font-size: 1.3rem; margin: 50px 0; border-left: 8px solid var(--gold); transition: 0.4s; }
+        .studio-textarea:focus { border-color: var(--gold); box-shadow: 0 0 30px rgba(212,175,55,0.1); }
 
-        /* GALERÍA DISEÑOS 3D */
-        .grid-3d { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
-        .card-3d { background: var(--gris); border-radius: 15px; overflow: hidden; border: 1px solid #111; transition: 0.3s; text-align: center; padding: 30px; }
-        .card-3d:hover { border-color: var(--oro); }
-        .icon-3d { font-size: 3rem; color: var(--oro); margin-bottom: 20px; display: block; }
+        /* QUEJAS Y RECLAMOS DE ALTA PRIORIDAD */
+        .claim-engine { max-width: 1000px; margin: 150px auto; padding: 100px; background: #050505; border-radius: 50px; border-top: 6px solid var(--error); text-align: center; box-shadow: 0 40px 120px rgba(0,0,0,0.6); }
+        .claim-engine h2 { font-family: 'Playfair Display'; color: var(--error); font-size: 3.5rem; margin-bottom: 40px; letter-spacing: 5px; }
+        .claim-input-group { margin-bottom: 35px; text-align: left; }
+        .claim-input-group label { color: #444; text-transform: uppercase; letter-spacing: 2px; font-size: 0.8rem; margin-bottom: 15px; display: block; }
+        .lux-input-field { width: 100%; padding: 25px; background: #000; border: 1px solid #1a1a1a; color: #fff; border-radius: 15px; font-size: 1.1rem; transition: 0.3s; }
+        .lux-input-field:focus { border-color: var(--error); }
 
-        /* QUEJAS Y RECLAMOS */
-        .quejas-box { background: #111; padding: 60px 10%; border-radius: 20px; margin-top: 100px; text-align: center; border: 1px solid #222; }
-        .form-queja { max-width: 600px; margin: 0 auto; text-align: left; }
-        input, textarea { width: 100%; padding: 16px; margin-bottom: 20px; background: #0d0d0d; border: 1px solid #1a1a1a; color: #fff; border-radius: 8px; outline: none; }
-        input:focus, textarea:focus { border-color: var(--oro); }
-
-        /* PANEL ADMIN */
-        #admin-panel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; color: #000; z-index: 2000; padding: 50px; overflow-y: auto; }
-        .table-admin { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .table-admin th, .table-admin td { border: 1px solid #ddd; padding: 15px; text-align: left; }
+        /* ADMIN CONTROL CENTER */
+        #luv-admin-vault { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; color: #000; z-index: 100000; padding: 100px; overflow-y: auto; }
+        .vault-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 5px solid #000; padding-bottom: 30px; margin-bottom: 50px; }
+        .vault-table { width: 100%; border-collapse: collapse; margin-top: 40px; }
+        .vault-table th, .vault-table td { border: 1px solid #eee; padding: 30px; text-align: left; }
+        .vault-table th { background: #fbfbfb; font-weight: 800; text-transform: uppercase; font-size: 0.8rem; color: #999; }
+        .close-vault { background: #000; color: #fff; padding: 20px 50px; border: none; border-radius: 10px; cursor: pointer; font-weight: 800; }
     </style>
 </head>
 <body>
 
-    <a href="https://wa.me/{{ wsp }}" class="btn-wsp" target="_blank">Soporte VIP 💬</a>
+    <a href="https://wa.me/{{ wsp }}" class="wsp-anchor" target="_blank">
+        LUVIRX STYLE VIP | SOPORTE 💬
+    </a>
 
-    <nav>
-        <a href="/" class="logo-box">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="Luvirx Logo" class="logo-img">
-            <span class="logo-txt">LUVIRX</span>
+    <header class="top-nav">
+        <a href="/" class="nav-logo-area">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo Luvirx" class="nav-logo-img" onerror="this.src='https://via.placeholder.com/200x200/000000/d4af37?text=LUVIRX';">
+            <span class="nav-brand-text">LUVIRX</span>
         </a>
+        <div style="display:flex; gap:30px; align-items:center;">
+            <button onclick="toggleCart()" style="background:none; border:2px solid var(--gold); color:var(--gold); padding:18px 40px; border-radius:20px; font-weight:800; cursor:pointer; letter-spacing:3px;">
+                MI BOLSA [<span id="cart-counter">0</span>]
+            </button>
+        </div>
+    </header>
+
+    <nav class="category-scroller">
+        <a href="#conjuntos">Conjuntos</a>
+        <a href="#jeans">Jeans</a>
+        <a href="#camisas">Camisas</a>
+        <a href="#blusas">Blusas</a>
+        <a href="#faldas">Faldas</a>
+        <a href="#deportiva">Ropa Deportiva</a>
+        <a href="#design-studio" class="special">Estudio 3D & Custom</a>
+        <a href="#claim-center" style="color:var(--error);">Reclamos</a>
     </nav>
 
-    <div class="menu-cat">
-        <a href="#conjuntos" class="cat-link">Conjuntos</a>
-        <a href="#jeans" class="cat-link">Jeans</a>
-        <a href="#camisas" class="cat-link">Camisas</a>
-        <a href="#blusas" class="cat-link">Blusas</a>
-        <a href="#faldas" class="cat-link">Faldas</a>
-        <a href="#deportiva" class="cat-link">Deportiva</a>
-        <a href="#diseno" class="cat-link" style="color:var(--oro);">Hacer mi diseño</a>
-        <a href="#galeria3d" class="cat-link">Diseños 3D</a>
-        <a href="#quejas" class="cat-link" style="color:red;">Quejas</a>
-    </div>
-
-    <div class="hero">
-        <p style="letter-spacing:5px; color:#aaa; font-weight:300;">EXCLUSIVIDAD URBANA PREMIUM</p>
+    <div class="lux-hero">
+        <p>Innovation in Urban Fashion</p>
         <h1>LUVIRX STYLE</h1>
-        <p>COLECCIÓN 2026</p>
+        <p>COLLECTION 2026 | BOGOTÁ - NEW YORK</p>
     </div>
 
-    <div class="contenedor">
-        <div id="diseno" class="studio-box">
-            <h2 style="font-family:'Playfair Display'; color:var(--oro); font-size:2.8rem;">HAZ TU PROPIO DISEÑO</h2>
-            <p style="color:#666; margin-top:10px;">Describe tu idea, texturas y formas de diseño únicas. Nosotros la creamos para ti.</p>
-            <textarea id="idea-text" placeholder="Ej: Quiero un conjunto de falda y blusa en seda negra con bordados dorados en la espalda..."></textarea>
-            <button class="btn-lujo" onclick="enviarDiseno()">Cotizar mi idea</button>
+    <div class="main-container">
+        
+        <section id="design-studio" class="studio-3d-wrap">
+            <h2>Estudio de Diseño Custom 3D</h2>
+            <p style="color:#555; letter-spacing:4px; font-weight:200;">CREA UNA PIEZA ÚNICA. NUESTRO SISTEMA PROCESARÁ TU IDEA Y NUESTROS SASTRES LA HARÁN REALIDAD.</p>
+            <textarea id="idea-box" class="studio-textarea" placeholder="Describe tu visión: Materiales, colores, texturas, formas asimétricas, detalles en 3D..."></textarea>
+            <button class="action-btn" onclick="submitDesignIdea()" style="background:var(--gold); color:#000;">Iniciar Prototipo de Diseño</button>
+        </section>
+
+        {% for cat_id, items in catalogo.items() %}
+        <h2 id="{{ cat_id }}" class="section-heading">{{ cat_id.capitalize() }}<span>Exclusive Luvirx Selection</span></h2>
+        <div class="fashion-grid">
+            {% for p in items %}
+            <div class="fashion-card">
+                <div class="card-image-box"></div>
+                <div class="card-body">
+                    <h3>{{ p.nombre }}</h3>
+                    <p>{{ p.desc }}</p>
+                    <span class="item-price">${{ "{:,}".format(p.precio) }}</span>
+                    <button class="action-btn" onclick="addToBolsa('{{ p.nombre }}', {{ p.precio }})">Añadir a Bolsa</button>
+                </div>
+            </div>
+            {% endfor %}
         </div>
+        {% endfor %}
 
-        <h2 id="conjuntos" class="titulo-seccion">Conjuntos Premium</h2>
-        <div class="grid"><div class="card"><div class="img-vacia">LUVIRX</div><div class="info"><h3>Conjunto "Shadow" Edition</h3><span class="precio">$180.000</span><button class="btn-lujo" onclick="add('Conjunto Shadow', 180000)">Añadir</button></div></div></div>
-
-        <h2 id="jeans" class="titulo-seccion">Jeans Urban</h2>
-        <div class="grid"><div class="card"><div class="img-vacia">LUVIRX</div><div class="info"><h3>Jeans Heritage Slim</h3><span class="precio">$125.000</span><button class="btn-lujo" onclick="add('Jeans Urban', 125000)">Añadir</button></div></div></div>
-
-        <h2 id="camisas" class="titulo-seccion">Camisas & Blusas</h2>
-        <div class="grid"><div class="card"><div class="img-vacia">LUVIRX</div><div class="info"><h3>Blusa Silk Luxe</h3><span class="precio">$85.000</span><button class="btn-lujo" onclick="add('Blusa Silk', 85000)">Añadir</button></div></div></div>
-
-        <h2 id="deportiva" class="titulo-seccion">Ropa Deportiva</h2>
-        <div class="grid"><div class="card"><div class="img-vacia">LUVIRX</div><div class="info"><h3>Licra Pro-Fit</h3><span class="precio">$95.000</span><button class="btn-lujo" onclick="add('Licra Pro', 95000)">Añadir</button></div></div></div>
-
-        <h2 id="galeria3d" class="titulo-seccion">Galería de Diseños 3D</h2>
-        <div class="grid-3d">
-            <div class="card-3d"><span class="icon-3d">立方</span><h3>Urban Armor 3D</h3><p style="color:#666; font-size:0.9rem;">Concepto de chaqueta asimétrica con texturas modulares.</p></div>
-            <div class="card-3d"><span class="icon-3d">立方</span><h3>Seda Digital 3D</h3><p style="color:#666; font-size:0.9rem;">Simulación de drapeado en seda con estampados algorítmicos.</p></div>
-        </div>
-
-        <div id="quejas" class="quejas-box">
-            <h2 style="font-family:'Playfair Display'; color:red; font-size:2.5rem; margin-bottom:20px;">Quejas y Reclamos</h2>
-            <p style="color:#888; margin-bottom:40px;">Tu opinión es fundamental. Háznos saber cualquier inconveniente.</p>
-            <div class="form-queja">
-                <input type="text" id="q-nombre" placeholder="Nombre completo">
-                <input type="text" id="q-contacto" placeholder="Número de contacto o Correo">
-                <textarea id="q-mensaje" placeholder="Describe tu queja o reclamo detalladamente..."></textarea>
-                <button class="btn-lujo" style="background:red; color:white;" onclick="enviarQueja()">Enviar Queja</button>
+        <h2 class="section-heading">Galería Conceptual 3D<span>Futurismo Textil</span></h2>
+        <div class="fashion-grid">
+            <div class="fashion-card" style="border-style:dashed; opacity:0.6;">
+                <div class="card-body">
+                    <h4 style="color:var(--gold); font-size:1.5rem; margin-bottom:20px;">PROYECTO: NEON-MANTLE</h4>
+                    <p>Integración de fibra óptica en tejidos de lino para visibilidad urbana.</p>
+                </div>
+            </div>
+            <div class="fashion-card" style="border-style:dashed; opacity:0.6;">
+                <div class="card-body">
+                    <h4 style="color:var(--gold); font-size:1.5rem; margin-bottom:20px;">PROYECTO: BIOMIMIC ARMOR</h4>
+                    <p>Estructuras impresas en 3D que imitan la flexibilidad de la piel orgánica.</p>
+                </div>
             </div>
         </div>
+
+        <section id="claim-center" class="claim-engine">
+            <h2>Atención al Cliente: Reclamos</h2>
+            <p style="color:#444; margin-bottom:60px; letter-spacing:2px;">CUALQUIER INCONVENIENTE SERÁ TRATADO CON PRIORIDAD ABSOLUTA POR NUESTRO EQUIPO GERENCIAL.</p>
+            <div class="claim-input-group">
+                <label>Nombre Completo del Cliente</label>
+                <input type="text" id="claim-user" class="lux-input-field">
+            </div>
+            <div class="claim-input-group">
+                <label>Canal de Contacto (Celular o Correo)</label>
+                <input type="text" id="claim-contact" class="lux-input-field">
+            </div>
+            <div class="claim-input-group">
+                <label>Detalle Exhaustivo del Reclamo</label>
+                <textarea id="claim-body" class="lux-input-field" style="min-height:200px;"></textarea>
+            </div>
+            <button class="action-btn" style="border-color:var(--error); color:var(--error);" onclick="submitClaim()">Radicar Reclamo Oficial</button>
+        </section>
+
     </div>
 
-    <div id="admin-panel">
-        <button onclick="document.getElementById('admin-panel').style.display='none'">CERRAR PANEL</button>
-        <h2>PANEL DE GESTIÓN LUVI-STYLE</h2>
-        <div id="tabla-admin-content"></div>
+    <div id="luv-admin-vault">
+        <div class="vault-header">
+            <h1 style="letter-spacing:15px; font-family:'Playfair Display'; font-size:3rem;">MASTER LOGISTICS CONTROL</h1>
+            <button onclick="closeVault()" class="close-vault">SALIR DEL SISTEMA</button>
+        </div>
+        <div id="vault-content"></div>
     </div>
 
-    <footer style="text-align:center; padding:60px; opacity:0.1; background:#050505; border-top:1px solid #111;" onclick="checkAdmin()">Luvirx Admin Control</footer>
+    <footer style="padding:150px 8%; text-align:center; border-top:1px solid var(--accent); background:#020202;" onclick="openVault()">
+        <p style="opacity:0.1; letter-spacing:10px; font-weight:800; cursor:pointer;">&copy; 2026 LUVIRX STYLE | LUXURY GROUP HOLDING</p>
+    </footer>
 
     <script>
-        let bolsa = []; let total = 0;
-        function add(n, p) { bolsa.push(n); total += p; alert("✓ Producto añadido."); }
-        
-        async function enviarDiseno() {
-            const txt = document.getElementById('idea-text').value;
-            if(!txt) return alert("Describe tu diseño exclusivo.");
-            await fetch('/api/diseno', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ idea: txt }) });
-            window.open(`https://wa.me/{{ wsp }}?text=Hola Luvirx! Quiero cotizar este diseño exclusivo: ${txt}`);
+        let bolsaItems = []; let bolsaTotal = 0;
+        function addToBolsa(n, p) { bolsaItems.push(n); bolsaTotal += p; document.getElementById('cart-counter').innerText = bolsaItems.length; }
+
+        async function toggleCart() {
+            if(bolsaItems.length === 0) return alert("Tu bolsa está vacía actualmente.");
+            const nom = prompt("Nombre completo para el despacho:");
+            const dir = prompt("Dirección de entrega exacta:");
+            if(!nom || !dir) return;
+            const pedidoData = { cliente: nom, direccion: dir, articulos: bolsaItems.join(", "), total: bolsaTotal };
+            await fetch('/api/internal/order', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(pedidoData) });
+            window.open(`https://wa.me/{{ wsp }}?text=LUVIRX STYLE - NUEVO PEDIDO%0ACliente: ${nom}%0AItems: ${pedidoData.articulos}%0ATotal: $${bolsaTotal}`);
             location.reload();
         }
 
-        async function enviarQueja() {
-            const nom = document.getElementById('q-nombre').value;
-            const con = document.getElementById('q-contacto').value;
-            const msg = document.getElementById('q-mensaje').value;
-            if(!nom || !msg) return alert("Por favor completa los campos.");
-            await fetch('/api/queja', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nombre: nom, contacto: con, mensaje: msg }) });
-            window.open(`https://wa.me/{{ wsp }}?text=Hola Luvirx! Tengo una Queja/Reclamo: Cliente ${nom}. Mensaje: ${msg}`);
-            alert("✓ Queja enviada. Nos comunicaremos contigo.");
+        async function submitDesignIdea() {
+            const idea = document.getElementById('idea-box').value;
+            if(!idea) return alert("Por favor, describe tu visión de diseño.");
+            await fetch('/api/internal/design', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ idea: idea }) });
+            window.open(`https://wa.me/{{ wsp }}?text=LUVIRX STYLE - DISEÑO 3D CUSTOM%0ADescripción: ${idea}`);
+            alert("Propuesta enviada al equipo de diseño.");
             location.reload();
         }
 
-        function checkAdmin() {
-            if(prompt("PIN ADMIN:") === "{{ pin }}") {
-                document.getElementById('admin-panel').style.display = 'block';
-                cargarDatos();
+        async function submitClaim() {
+            const nom = document.getElementById('claim-user').value;
+            const con = document.getElementById('claim-contact').value;
+            const msg = document.getElementById('claim-body').value;
+            if(!nom || !msg) return alert("Faltan datos críticos para radicar el reclamo.");
+            const claimData = { nombre: nom, contacto: con, mensaje: msg };
+            await fetch('/api/internal/claim', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(claimData) });
+            window.open(`https://wa.me/{{ wsp }}?text=URGENTE - RECLAMO LUVIRX STYLE%0ACliente: ${nom}%0AMensaje: ${msg}`);
+            alert("Reclamo radicado bajo supervisión gerencial.");
+            location.reload();
+        }
+
+        function openVault() {
+            if(prompt("CÓDIGO DE ENCRIPTACIÓN DE ACCESO:") === "{{ pin }}") {
+                document.getElementById('luv-admin-vault').style.display = 'block';
+                renderVaultData();
             }
         }
+        function closeVault() { document.getElementById('luv-admin-vault').style.display = 'none'; }
 
-        async function cargarDatos() {
-            const res = await fetch('/api/lista'); const data = await res.json();
-            let h = '<h3>Pedidos</h3><table class="table-admin"><tr><th>Pedido</th></tr>';
-            data.pedidos.forEach(p => h += `<tr><td>${p.items} - $${p.total}</td></tr>`);
-            h += '</table><h3>Diseños Propios</h3><table class="table-admin"><tr><th>Idea</th></tr>';
-            data.disenos.forEach(d => h += `<tr><td>${d.idea}</td></tr>`);
-            h += '</table><h3 style="color:red;">Quejas y Reclamos</h3><table class="table-admin"><tr><th>Cliente</th><th>Mensaje</th></tr>';
-            data.quejas.forEach(q => h += `<tr><td>${q.nombre} (${q.contacto})</td><td>${q.mensaje}</td></tr>`);
-            document.getElementById('tabla-admin-content').innerHTML = h + '</table>';
+        async function renderVaultData() {
+            const res = await fetch('/api/internal/data'); const d = await res.json();
+            let html = '<h2>Órdenes de Venta</h2><table class="vault-table"><tr><th>Cliente</th><th>Productos</th><th>Total</th></tr>';
+            d.pedidos.forEach(p => html += `<tr><td>${p.cliente}</td><td>${p.articulos}</td><td>$${p.total}</td></tr>`);
+            html += '</table><h2>Buzón de Diseños Personalizados</h2><table class="vault-table"><tr><th>Propuesta de Diseño</th></tr>';
+            d.disenos_personalizados.forEach(dp => html += `<tr><td>${dp.idea}</td></tr>`);
+            html += '</table><h2 style="color:red;">Reportes de Reclamación</h2><table class="vault-table"><tr><th>Cliente</th><th>Detalle del Reclamo</th></tr>';
+            d.quejas_reclamos.forEach(q => html += `<tr><td>${q.nombre} (${q.contacto})</td><td>${q.mensaje}</td></tr>`);
+            document.getElementById('vault-content').innerHTML = html + '</table>';
         }
     </script>
 </body>
@@ -203,19 +361,23 @@ HTML_PROFESIONAL = """
 """
 
 @app.route('/')
-def home(): return render_template_string(HTML_PROFESIONAL, wsp=WSP, pin=PIN_ADMIN)
+def luvirx_main():
+    return render_template_string(HTML_TEMPLATE_ULTIMATE, 
+                                  catalogo=CATALOGO_LUVIRX, 
+                                  wsp=WSP_OFFICIAL, 
+                                  pin=ADMIN_PIN_ACCESS)
 
-@app.route('/api/pedido', methods=['POST'])
-def pedido(): pedidos_db.append(request.json); return jsonify({"ok": True})
+@app.route('/api/internal/order', methods=['POST'])
+def handle_order(): storage["pedidos"].append(request.json); return jsonify({"status": "stored"})
 
-@app.route('/api/diseno', methods=['POST'])
-def diseno(): diseños_db.append(request.json); return jsonify({"ok": True})
+@app.route('/api/internal/design', methods=['POST'])
+def handle_design(): storage["disenos_personalizados"].append(request.json); return jsonify({"status": "stored"})
 
-@app.route('/api/queja', methods=['POST'])
-def queja(): quejas_db.append(request.json); return jsonify({"ok": True})
+@app.route('/api/internal/claim', methods=['POST'])
+def handle_claim(): storage["quejas_reclamos"].append(request.json); return jsonify({"status": "stored"})
 
-@app.route('/api/lista')
-def lista(): return jsonify({"pedidos": pedidos_db, "disenos": diseños_db, "quejas": quejas_db})
+@app.route('/api/internal/data')
+def get_vault_data(): return jsonify(storage)
 
 if __name__ == '__main__':
     app.run(debug=True)
